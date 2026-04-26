@@ -15,4 +15,4 @@ try:
     except PackageNotFoundError:  # pragma: no cover – source checkout
         SDK_VERSION = "0.1.0"
 except ImportError:  # pragma: no cover – py<3.8, not supported but harmless
-    SDK_VERSION = "0.1.0"
+    SDK_VERSION = "0.1.1"
