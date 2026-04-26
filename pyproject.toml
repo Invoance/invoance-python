@@ -1,0 +1,75 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "invoance"
+version = "0.1.0"
+description = "Official Python SDK for the Invoance compliance API"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.9"
+authors = [{ name = "Invoance, Inc.", email = "sdk@invoance.com" }]
+keywords = [
+    "invoance",
+    "compliance",
+    "attestation",
+    "cryptographic-proof",
+    "audit",
+    "audit-trail",
+    "soc2",
+    "hipaa",
+    "ed25519",
+    "tamper-evident",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Security :: Cryptography",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed",
+]
+
+dependencies = [
+    "httpx>=0.27,<1",
+    "pydantic>=2.0,<3",
+    "PyNaCl>=1.5,<2",
+]
+
+[project.optional-dependencies]
+examples = [
+    "python-dotenv>=1.0",
+]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "respx>=0.22",
+    "python-dotenv>=1.0",
+]
+
+[project.urls]
+Homepage = "https://invoance.com"
+Documentation = "https://invoance.com/docs"
+Repository = "https://github.com/Invoance/invoance-python"
+Issues = "https://github.com/Invoance/invoance-python/issues"
+Changelog = "https://github.com/Invoance/invoance-python/blob/main/CHANGELOG.md"
+
+[tool.hatch.build.targets.wheel]
+packages = ["invoance"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"invoance/py.typed" = "invoance/py.typed"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
