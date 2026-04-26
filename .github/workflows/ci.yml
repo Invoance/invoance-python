@@ -1,0 +1,32 @@
+# Run pytest + smoke build on every push and PR.
+# Matrixed across the Python versions we support.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Python ${{ matrix.python }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+      - run: python -m pip install --upgrade pip build
+      - run: pip install -e ".[dev]"
+      - run: pytest -v
+      - name: Build sdist + wheel (smoke)
+        run: python -m build --sdist --wheel

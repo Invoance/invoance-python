@@ -1,0 +1,32 @@
+# Bytecode / cache
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Distribution
+build/
+dist/
+*.egg-info/
+*.egg
+
+# Virtual env
+.venv/
+venv/
+
+# Environment
+.env
+.env.local
+.env.*.local
+# Keep .env.example committed — it's the template
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+
+# Coverage
+.coverage
+htmlcov/
