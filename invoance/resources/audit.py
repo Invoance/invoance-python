@@ -175,11 +175,19 @@ class AuditPortalSessionsResource:
         organization_id: str,
         intent: str,
         session_duration_seconds: int | None = None,
+        link_duration_seconds: int | None = None,
     ) -> dict[str, Any]:
-        """Mint a one-time portal link. ``intent`` is ``audit_logs`` or ``log_streams``."""
+        """Mint a one-time portal link. ``intent`` is ``audit_logs`` or ``log_streams``.
+
+        ``session_duration_seconds`` is the viewer session length once opened (default
+        7200, range 60..86400); ``link_duration_seconds`` is how long the one-time link
+        stays valid to open (default 300, range 60..3600).
+        """
         body: dict[str, Any] = {"organization_id": organization_id, "intent": intent}
         if session_duration_seconds is not None:
             body["session_duration_seconds"] = session_duration_seconds
+        if link_duration_seconds is not None:
+            body["link_duration_seconds"] = link_duration_seconds
         return await self._t.post("/audit/portal_sessions", json=body)
 
 

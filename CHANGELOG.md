@@ -24,6 +24,11 @@ contract applies.
   (previously `occurred_after` / `occurred_before`), matching the query params the
   API documents.
 
+### Added
+
+- `audit.portal_sessions.create(link_duration_seconds=...)`: the one-time link open
+  window in seconds (default 300, range 60..3600), alongside `session_duration_seconds`.
+
 Breaking: this renames keyword arguments. Update call sites, for example
 `ingest(org=...)` becomes `ingest(organization_id=...)`. Per this SDK's pre-1.0
 policy, breaking changes ship in a minor release.
