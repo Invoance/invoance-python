@@ -6,6 +6,8 @@ stable across dict ordering and distinct across content.
 
 from __future__ import annotations
 
+import httpx
+
 from invoance import InvoanceClient, content_idempotency_key
 
 
@@ -30,9 +32,81 @@ def test_audit_namespaces_present() -> None:
 
 
 def test_content_idempotency_key_stable_and_distinct() -> None:
-    a = content_idempotency_key({"org": "o", "action": "x", "actor": {"id": "u1"}})
-    b = content_idempotency_key({"actor": {"id": "u1"}, "action": "x", "org": "o"})  # different ordering
-    c = content_idempotency_key({"org": "o", "action": "y", "actor": {"id": "u1"}})  # different content
+    a = content_idempotency_key({"organization_id": "o", "action": "x", "actor": {"id": "u1"}})
+    b = content_idempotency_key({"actor": {"id": "u1"}, "action": "x", "organization_id": "o"})  # different ordering
+    c = content_idempotency_key({"organization_id": "o", "action": "y", "actor": {"id": "u1"}})  # different content
     assert a == b
     assert a != c
     assert a.startswith("idem_")
+
+
+# ── request wire shape: organization_id / range_* rename (0.3.0) ──
+#
+# Patch the AsyncClient.request the SDK calls and capture the outgoing json/params —
+# no network, and no extra test dependency (httpx is already a runtime dep).
+
+
+def _capture_request(monkeypatch, response_json: dict) -> dict:
+    captured: dict = {}
+
+    async def fake_request(self, method, path, *, params=None, json=None, headers=None):
+        captured["method"] = method
+        captured["path"] = path
+        captured["json"] = json
+        captured["params"] = params
+        return httpx.Response(
+            200,
+            json=response_json,
+            request=httpx.Request(method, f"http://localhost{path}"),
+        )
+
+    monkeypatch.setattr(httpx.AsyncClient, "request", fake_request)
+    return captured
+
+
+async def test_ingest_sends_organization_id_not_org(monkeypatch) -> None:
+    captured = _capture_request(
+        monkeypatch, {"event_id": "aevt_x", "ingested_at": "2026-01-01T00:00:00Z"}
+    )
+    async with _client() as c:
+        await c.audit.events.ingest(
+            organization_id="org_x",
+            action="user.signed_in",
+            actor={"type": "user", "id": "u1"},
+        )
+    assert captured["json"]["organization_id"] == "org_x"
+    assert "org" not in captured["json"]  # the pre-0.3.0 field name must not be sent
+
+
+async def test_list_sends_organization_id_and_range_params(monkeypatch) -> None:
+    captured = _capture_request(monkeypatch, {"events": [], "next_cursor": None})
+    async with _client() as c:
+        await c.audit.events.list(
+            organization_id="org_x",
+            range_start="2026-01-01T00:00:00Z",
+            range_end="2026-02-01T00:00:00Z",
+        )
+    params = captured["params"]
+    assert params["organization_id"] == "org_x"
+    assert params["range_start"] == "2026-01-01T00:00:00Z"
+    assert params["range_end"] == "2026-02-01T00:00:00Z"
+    assert "org_id" not in params
+    assert "occurred_after" not in params
+
+
+async def test_orgs_create_sends_organization_id_not_external_id(monkeypatch) -> None:
+    captured = _capture_request(monkeypatch, {"id": "aorg_x", "organization_id": "org_x"})
+    async with _client() as c:
+        await c.audit.orgs.create(organization_id="org_x", name="Acme")
+    assert captured["json"]["organization_id"] == "org_x"
+    assert "external_id" not in captured["json"]
+
+
+async def test_exports_create_sends_organization_id(monkeypatch) -> None:
+    captured = _capture_request(
+        monkeypatch, {"id": "aexp_x", "status": "pending", "format": "csv"}
+    )
+    async with _client() as c:
+        await c.audit.exports.create(organization_id="org_x", format="csv")
+    assert captured["json"]["organization_id"] == "org_x"
+    assert "org_id" not in captured["json"]

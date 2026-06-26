@@ -2,7 +2,7 @@
 
 Usage
 -----
-    python examples/audit/export.py <org_id (aorg_...)> [csv|ndjson]
+    python examples/audit/export.py <organization_id> [csv|ndjson]
 """
 
 import asyncio
@@ -17,13 +17,13 @@ load_dotenv()
 
 async def main() -> None:
     if len(sys.argv) < 2:
-        print("Usage: python examples/audit/export.py <org_id (aorg_...)> [csv|ndjson]")
+        print("Usage: python examples/audit/export.py <organization_id> [csv|ndjson]")
         sys.exit(1)
-    org_id = sys.argv[1]
+    organization_id = sys.argv[1]
     fmt = sys.argv[2] if len(sys.argv) > 2 else "csv"
 
     async with InvoanceClient() as client:
-        job = await client.audit.exports.create(org_id=org_id, format=fmt)
+        job = await client.audit.exports.create(organization_id=organization_id, format=fmt)
         export_id = job["id"]
         print(f"queued export {export_id} ({fmt})")
 

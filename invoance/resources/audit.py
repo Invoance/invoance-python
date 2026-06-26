@@ -44,7 +44,7 @@ class AuditEventsResource:
     async def ingest(
         self,
         *,
-        org: str,
+        organization_id: str,
         action: str,
         actor: dict[str, Any],
         occurred_at: str | None = None,
@@ -55,13 +55,14 @@ class AuditEventsResource:
     ) -> dict[str, Any]:
         """Append one audit event (POST /audit/events).
 
-        ``org`` is your external org id; ``actor`` is ``{"type","id","name"?}``.
+        ``organization_id`` is your own id for the org — your external id (e.g.
+        ``"org_01J8F3KQ2R7VWX9YB4ND6MCZAH"``) or the ``aorg_`` id. ``actor`` is ``{"type","id","name"?}``.
         ``occurred_at`` defaults to now (RFC3339, ms + Z). The ledger REQUIRES an
         Idempotency-Key, so one is derived from the event content when ``idempotency_key``
         is omitted (override it with a stable value for safe retries).
         """
         body: dict[str, Any] = {
-            "org": org,
+            "organization_id": organization_id,
             "action": action,
             "occurred_at": occurred_at or _now_rfc3339(),
             "actor": actor,
@@ -77,25 +78,28 @@ class AuditEventsResource:
     async def list(
         self,
         *,
-        org_id: str | None = None,
+        organization_id: str | None = None,
         actions: str | None = None,
         actor_id: str | None = None,
         target_id: str | None = None,
-        occurred_after: str | None = None,
-        occurred_before: str | None = None,
+        range_start: str | None = None,
+        range_end: str | None = None,
         limit: int | None = None,
         cursor: str | None = None,
     ) -> dict[str, Any]:
-        """List events (GET /audit/events), keyset-paginated via ``cursor``."""
+        """List events (GET /audit/events), keyset-paginated via ``cursor``.
+
+        ``range_start`` / ``range_end`` are inclusive RFC3339 bounds on ``occurred_at``.
+        """
         return await self._t.get(
             "/audit/events",
             params={
-                "org_id": org_id,
+                "organization_id": organization_id,
                 "actions": actions,
                 "actor_id": actor_id,
                 "target_id": target_id,
-                "occurred_after": occurred_after,
-                "occurred_before": occurred_before,
+                "range_start": range_start,
+                "range_end": range_end,
                 "limit": limit,
                 "cursor": cursor,
             },
@@ -119,8 +123,9 @@ class AuditOrgsResource:
     def __init__(self, transport: HttpTransport) -> None:
         self._t = transport
 
-    async def create(self, *, external_id: str, name: str | None = None) -> dict[str, Any]:
-        body: dict[str, Any] = {"external_id": external_id}
+    async def create(self, *, organization_id: str, name: str | None = None) -> dict[str, Any]:
+        """Register an end-customer org. ``organization_id`` is your own id for it."""
+        body: dict[str, Any] = {"organization_id": organization_id}
         if name is not None:
             body["name"] = name
         return await self._t.post("/audit/orgs", json=body)
@@ -128,13 +133,13 @@ class AuditOrgsResource:
     async def list(self) -> dict[str, Any]:
         return await self._t.get("/audit/orgs")
 
-    async def integrity(self, org_id: str) -> dict[str, Any]:
+    async def integrity(self, organization_id: str) -> dict[str, Any]:
         """Seq-gap integrity scan for an org (GET /audit/orgs/{id}/integrity)."""
-        return await self._t.get(f"/audit/orgs/{org_id}/integrity")
+        return await self._t.get(f"/audit/orgs/{organization_id}/integrity")
 
-    async def set_retention(self, org_id: str, *, days: int) -> dict[str, Any]:
+    async def set_retention(self, organization_id: str, *, days: int) -> dict[str, Any]:
         """Set retention in days (clamped to the plan cap)."""
-        return await self._t.put(f"/audit/orgs/{org_id}/retention", json={"days": days})
+        return await self._t.put(f"/audit/orgs/{organization_id}/retention", json={"days": days})
 
 
 class AuditStreamsResource:
@@ -143,19 +148,19 @@ class AuditStreamsResource:
     def __init__(self, transport: HttpTransport) -> None:
         self._t = transport
 
-    async def create(self, org_id: str, *, url: str, type: str = "webhook") -> dict[str, Any]:
+    async def create(self, organization_id: str, *, url: str, type: str = "webhook") -> dict[str, Any]:
         """Create a stream; the signing secret is returned ONCE in the response."""
-        return await self._t.post(f"/audit/orgs/{org_id}/streams", json={"type": type, "url": url})
+        return await self._t.post(f"/audit/orgs/{organization_id}/streams", json={"type": type, "url": url})
 
-    async def list(self, org_id: str) -> dict[str, Any]:
-        return await self._t.get(f"/audit/orgs/{org_id}/streams")
+    async def list(self, organization_id: str) -> dict[str, Any]:
+        return await self._t.get(f"/audit/orgs/{organization_id}/streams")
 
-    async def delete(self, org_id: str, stream_id: str) -> dict[str, Any]:
-        return await self._t.delete(f"/audit/orgs/{org_id}/streams/{stream_id}")
+    async def delete(self, organization_id: str, stream_id: str) -> dict[str, Any]:
+        return await self._t.delete(f"/audit/orgs/{organization_id}/streams/{stream_id}")
 
-    async def test(self, org_id: str, stream_id: str) -> dict[str, Any]:
+    async def test(self, organization_id: str, stream_id: str) -> dict[str, Any]:
         """Send a synthetic delivery to verify the destination."""
-        return await self._t.post(f"/audit/orgs/{org_id}/streams/{stream_id}/test")
+        return await self._t.post(f"/audit/orgs/{organization_id}/streams/{stream_id}/test")
 
 
 class AuditPortalSessionsResource:
@@ -167,12 +172,12 @@ class AuditPortalSessionsResource:
     async def create(
         self,
         *,
-        org_id: str,
+        organization_id: str,
         intent: str,
         session_duration_seconds: int | None = None,
     ) -> dict[str, Any]:
         """Mint a one-time portal link. ``intent`` is ``audit_logs`` or ``log_streams``."""
-        body: dict[str, Any] = {"org_id": org_id, "intent": intent}
+        body: dict[str, Any] = {"organization_id": organization_id, "intent": intent}
         if session_duration_seconds is not None:
             body["session_duration_seconds"] = session_duration_seconds
         return await self._t.post("/audit/portal_sessions", json=body)
@@ -187,12 +192,12 @@ class AuditExportsResource:
     async def create(
         self,
         *,
-        org_id: str,
+        organization_id: str,
         format: str,
         filters: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """Queue an export job. ``format`` is ``csv`` or ``ndjson``."""
-        body: dict[str, Any] = {"org_id": org_id, "format": format}
+        body: dict[str, Any] = {"organization_id": organization_id, "format": format}
         if filters is not None:
             body["filters"] = filters
         return await self._t.post("/audit/exports", json=body)

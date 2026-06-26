@@ -2,9 +2,9 @@
 
 Usage
 -----
-    python examples/audit/ingest_and_verify.py <org_external_id>
+    python examples/audit/ingest_and_verify.py <organization_id>
 
-The org must already exist (``client.audit.orgs.create(external_id=...)``). The event is
+The org must already exist (``client.audit.orgs.create(organization_id=...)``). The event is
 signed server-side; we read it back and check the Ed25519 signature client-side with
 ``verify_audit_event`` — no second network round-trip is needed to trust the row.
 """
@@ -21,16 +21,16 @@ load_dotenv()
 
 async def main() -> None:
     if len(sys.argv) < 2:
-        print("Usage: python examples/audit/ingest_and_verify.py <org_external_id>")
+        print("Usage: python examples/audit/ingest_and_verify.py <organization_id>")
         sys.exit(1)
-    org = sys.argv[1]
+    organization_id = sys.argv[1]
 
     async with InvoanceClient() as client:
         # occurred_at defaults to now and the Idempotency-Key is auto-derived from the
         # event content, so a bare ingest() just works. For idempotent retries, pin both
         # occurred_at and idempotency_key=content_idempotency_key(your_full_body).
         created = await client.audit.events.ingest(
-            org=org,
+            organization_id=organization_id,
             action="user.signed_in",
             actor={"type": "user", "id": "u_42", "name": "Ada Lovelace"},
             targets=[{"type": "doc", "id": "d_1"}],

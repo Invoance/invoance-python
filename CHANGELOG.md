@@ -11,6 +11,25 @@ contract applies.
 
 ---
 
+## [0.3.0] - 2026-06-26
+
+### Changed
+
+- **Audit org parameter unified to `organization_id`.** Every `client.audit.*`
+  method now takes `organization_id` for the org (your own id such as `"org_01J8F3KQ2R7VWX9YB4ND6MCZAH"`,
+  or the `aorg_` id). This replaces the inconsistent `org=` (ingest), `org_id=`
+  (list, portal_sessions, exports, and the orgs/streams methods), and `external_id=`
+  (`orgs.create`). The API resolves either the external id or the `aorg_` id.
+- **Event filters renamed to `range_start` / `range_end`** on `events.list()`
+  (previously `occurred_after` / `occurred_before`), matching the query params the
+  API documents.
+
+Breaking: this renames keyword arguments. Update call sites, for example
+`ingest(org=...)` becomes `ingest(organization_id=...)`. Per this SDK's pre-1.0
+policy, breaking changes ship in a minor release.
+
+---
+
 ## [0.2.0] - 2026-06-26
 
 ### Added
