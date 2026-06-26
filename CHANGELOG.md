@@ -11,6 +11,16 @@ contract applies.
 
 ---
 
+## [0.3.1] - 2026-06-26
+
+### Added
+
+- `audit.portal_sessions.create(link_duration_seconds=...)`: the one-time link open
+  window in seconds (default 300, range 60..3600), alongside `session_duration_seconds`.
+  Maps to the new `link_duration_seconds` on `POST /v1/audit/portal_sessions`.
+
+---
+
 ## [0.3.0] - 2026-06-26
 
 ### Changed
@@ -23,11 +33,6 @@ contract applies.
 - **Event filters renamed to `range_start` / `range_end`** on `events.list()`
   (previously `occurred_after` / `occurred_before`), matching the query params the
   API documents.
-
-### Added
-
-- `audit.portal_sessions.create(link_duration_seconds=...)`: the one-time link open
-  window in seconds (default 300, range 60..3600), alongside `session_duration_seconds`.
 
 Breaking: this renames keyword arguments. Update call sites, for example
 `ingest(org=...)` becomes `ingest(organization_id=...)`. Per this SDK's pre-1.0
