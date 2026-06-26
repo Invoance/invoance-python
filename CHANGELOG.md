@@ -11,9 +11,19 @@ contract applies.
 
 ---
 
-## [Unreleased]
+## [0.2.0] - 2026-06-26
 
-_Nothing yet._
+### Added
+
+- **Audit Logs** — `client.audit.*`: `events.{ingest,list,get,verify}`, `orgs`,
+  `streams`, `portal_sessions`, `exports` for the append-only signed event ledger,
+  SIEM/webhook streams, hosted-viewer links, and async CSV/NDJSON exports.
+- **`verify_audit_event()`** — offline Ed25519 verification of an audit event,
+  reconstructing the frozen `invoance.audit/1` canonical bytes (PyNaCl). Pin the
+  tenant's key via `public_key=` for a real tamper guarantee. Conformance is gated by
+  the shared golden vectors.
+- **`content_idempotency_key()`** — derive a stable `Idempotency-Key` from an event body
+  for safe retries.
 
 ---
 

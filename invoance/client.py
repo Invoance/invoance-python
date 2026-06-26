@@ -42,6 +42,7 @@ from invoance.resources.events import EventsResource
 from invoance.resources.documents import DocumentsResource
 from invoance.resources.attestations import AttestationsResource
 from invoance.resources.traces import TracesResource
+from invoance.resources.audit import AuditResource
 
 
 @dataclass(frozen=True)
@@ -119,6 +120,7 @@ class InvoanceClient:
         self.documents = DocumentsResource(self._transport)
         self.attestations = AttestationsResource(self._transport)
         self.traces = TracesResource(self._transport)
+        self.audit = AuditResource(self._transport)
 
     @property
     def config(self) -> ClientConfig:

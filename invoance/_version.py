@@ -13,6 +13,6 @@ try:
     try:
         SDK_VERSION: str = _pkg_version("invoance")
     except PackageNotFoundError:  # pragma: no cover – source checkout
-        SDK_VERSION = "0.1.0"
+        SDK_VERSION = "0.2.0"
 except ImportError:  # pragma: no cover – py<3.8, not supported but harmless
-    SDK_VERSION = "0.1.1"
+    SDK_VERSION = "0.2.0"

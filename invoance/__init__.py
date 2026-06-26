@@ -15,6 +15,8 @@ from invoance.errors import (
     TimeoutError,
 )
 from invoance._version import SDK_VERSION
+from invoance.resources.audit import content_idempotency_key
+from invoance.audit_verify import verify_audit_event, AuditVerifyResult
 
 __all__ = [
     "InvoanceClient",
@@ -30,6 +32,9 @@ __all__ = [
     "ServerError",
     "NetworkError",
     "TimeoutError",
+    "content_idempotency_key",
+    "verify_audit_event",
+    "AuditVerifyResult",
 ]
 
 __version__ = SDK_VERSION

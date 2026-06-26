@@ -65,6 +65,16 @@ class HttpTransport:
         )
         return self._handle(resp, ctx)
 
+    async def put(
+        self,
+        path: str,
+        *,
+        json: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        ctx = RequestContext(method="PUT", path=path)
+        resp = await self._request("PUT", path, json=json, ctx=ctx)
+        return self._handle(resp, ctx)
+
     async def delete(
         self,
         path: str,
