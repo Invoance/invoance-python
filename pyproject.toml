@@ -59,7 +59,7 @@ dev = [
 
 [project.urls]
 Homepage = "https://invoance.com"
-Documentation = "https://invoance.com/docs"
+Documentation = "https://www.invoance.com/developers"
 Repository = "https://github.com/Invoance/invoance-python"
 Issues = "https://github.com/Invoance/invoance-python/issues"
 Changelog = "https://github.com/Invoance/invoance-python/blob/main/CHANGELOG.md"
