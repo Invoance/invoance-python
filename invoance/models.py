@@ -68,7 +68,9 @@ class ComplianceEvent(BaseModel):
     payload: dict[str, Any]
     event_time: Optional[str] = None
     retention_policy: str = ""
-    access_tier: str = "active"
+    # Not returned by every endpoint (e.g. the single-event GET omits it).
+    access_tier: Optional[str] = None
+    expires_at: Optional[str] = None
     api_key_id: Optional[str] = None
     user_id: Optional[str] = None
     ingested_at: str = ""

@@ -11,6 +11,17 @@ contract applies.
 
 ---
 
+## [Unreleased]
+
+### Fixed
+
+- `ComplianceEvent.access_tier` is now `Optional[str]` defaulting to `None` (it
+  previously defaulted to `"active"`, fabricating a value the server never sent), and
+  a new `expires_at: Optional[str]` field was added — matching what `GET /v1/events/:id`
+  actually returns.
+
+---
+
 ## [0.3.1] - 2026-06-26
 
 ### Added
