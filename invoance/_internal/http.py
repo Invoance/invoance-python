@@ -75,6 +75,16 @@ class HttpTransport:
         resp = await self._request("PUT", path, json=json, ctx=ctx)
         return self._handle(resp, ctx)
 
+    async def patch(
+        self,
+        path: str,
+        *,
+        json: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        ctx = RequestContext(method="PATCH", path=path)
+        resp = await self._request("PATCH", path, json=json, ctx=ctx)
+        return self._handle(resp, ctx)
+
     async def delete(
         self,
         path: str,

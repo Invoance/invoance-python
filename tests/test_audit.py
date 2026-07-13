@@ -110,3 +110,77 @@ async def test_exports_create_sends_organization_id(monkeypatch) -> None:
         await c.audit.exports.create(organization_id="org_x", format="csv")
     assert captured["json"]["organization_id"] == "org_x"
     assert "org_id" not in captured["json"]
+
+
+# ── org lifecycle: update / archive / unarchive / delete / include_archived ──
+
+
+_ORG_JSON = {
+    "id": "aorg_x",
+    "organization_id": "org_x",
+    "external_id": "org_x",
+    "name": "Acme",
+    "retention_days": 90,
+    "created_at": "2026-01-01T00:00:00Z",
+    "archived_at": None,
+}
+
+
+async def test_orgs_update_sends_patch_with_name(monkeypatch) -> None:
+    captured = _capture_request(monkeypatch, {**_ORG_JSON, "name": "Acme Renamed"})
+    async with _client() as c:
+        await c.audit.orgs.update("org_x", name="Acme Renamed")
+    assert captured["method"] == "PATCH"
+    assert captured["path"] == "/audit/orgs/org_x"
+    assert captured["json"] == {"name": "Acme Renamed"}
+
+
+async def test_orgs_update_none_sends_json_null_to_clear(monkeypatch) -> None:
+    captured = _capture_request(monkeypatch, {**_ORG_JSON, "name": None})
+    async with _client() as c:
+        await c.audit.orgs.update("org_x", name=None)
+    assert captured["method"] == "PATCH"
+    assert captured["json"] == {"name": None}  # serialized as JSON null on the wire
+
+
+async def test_orgs_archive_posts_to_archive_path(monkeypatch) -> None:
+    captured = _capture_request(
+        monkeypatch, {**_ORG_JSON, "archived_at": "2026-07-13T00:00:00Z"}
+    )
+    async with _client() as c:
+        await c.audit.orgs.archive("aorg_x")
+    assert captured["method"] == "POST"
+    assert captured["path"] == "/audit/orgs/aorg_x/archive"
+    assert captured["json"] is None
+
+
+async def test_orgs_unarchive_posts_to_unarchive_path(monkeypatch) -> None:
+    captured = _capture_request(monkeypatch, _ORG_JSON)
+    async with _client() as c:
+        await c.audit.orgs.unarchive("aorg_x")
+    assert captured["method"] == "POST"
+    assert captured["path"] == "/audit/orgs/aorg_x/unarchive"
+
+
+async def test_orgs_delete_uses_delete_method(monkeypatch) -> None:
+    captured = _capture_request(monkeypatch, {"deleted": True, "id": "aorg_x"})
+    async with _client() as c:
+        await c.audit.orgs.delete("aorg_x")
+    assert captured["method"] == "DELETE"
+    assert captured["path"] == "/audit/orgs/aorg_x"
+
+
+async def test_orgs_list_excludes_archived_by_default(monkeypatch) -> None:
+    captured = _capture_request(monkeypatch, {"orgs": []})
+    async with _client() as c:
+        await c.audit.orgs.list()
+    assert captured["method"] == "GET"
+    assert captured["path"] == "/audit/orgs"
+    assert not (captured["params"] or {})  # no include_archived param sent
+
+
+async def test_orgs_list_include_archived_sends_query_param(monkeypatch) -> None:
+    captured = _capture_request(monkeypatch, {"orgs": []})
+    async with _client() as c:
+        await c.audit.orgs.list(include_archived=True)
+    assert captured["params"]["include_archived"] == "true"

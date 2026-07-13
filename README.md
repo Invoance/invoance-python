@@ -77,7 +77,7 @@ async with InvoanceClient() as client:
         raise RuntimeError(f"Invoance: {result.reason} (base: {result.base_url})")
 ```
 
-`validate()` probes `GET /v1/events?limit=1`, never raises, and returns a `ValidationResult(valid, reason, base_url)` — use it in health checks, startup scripts, or CI guards.
+`validate()` probes `GET /v1/me` (scope-free key introspection), never raises, and returns a `ValidationResult(valid, reason, base_url)` — use it in health checks, startup scripts, or CI guards. For the parsed introspection body itself (organization, tenant, api_key scopes, limits), call `await client.me()`.
 
 One-liner for a terminal sanity check, no SDK install required:
 

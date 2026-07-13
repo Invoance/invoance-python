@@ -130,8 +130,49 @@ class AuditOrgsResource:
             body["name"] = name
         return await self._t.post("/audit/orgs", json=body)
 
-    async def list(self) -> dict[str, Any]:
-        return await self._t.get("/audit/orgs")
+    async def list(self, *, include_archived: bool = False) -> dict[str, Any]:
+        """List orgs (GET /audit/orgs). Archived orgs are excluded unless
+        ``include_archived=True`` (maps to ``?include_archived=true``)."""
+        return await self._t.get(
+            "/audit/orgs",
+            params={"include_archived": "true" if include_archived else None},
+        )
+
+    async def update(self, organization_id: str, *, name: str | None) -> dict[str, Any]:
+        """Rename an org (PATCH /audit/orgs/{id}).
+
+        ``name`` is a required keyword: pass a string to rename, or an explicit
+        ``None`` to clear the name (sent as JSON ``null``). Making it required —
+        rather than defaulting to ``None`` — keeps "clear the name" an explicit
+        call-site decision instead of an accidental one. Returns the full org JSON.
+        """
+        return await self._t.patch(f"/audit/orgs/{organization_id}", json={"name": name})
+
+    async def archive(self, organization_id: str) -> dict[str, Any]:
+        """Archive an org (POST /audit/orgs/{id}/archive). Idempotent.
+
+        Freezes new activity — ingest/streams/portal/exports return 409
+        ``org_archived`` — while history stays verifiable. Returns the org JSON
+        with ``archived_at`` set.
+        """
+        return await self._t.post(f"/audit/orgs/{organization_id}/archive")
+
+    async def unarchive(self, organization_id: str) -> dict[str, Any]:
+        """Unarchive an org (POST /audit/orgs/{id}/unarchive). Idempotent.
+
+        Returns the org JSON with ``archived_at`` null.
+        """
+        return await self._t.post(f"/audit/orgs/{organization_id}/unarchive")
+
+    async def delete(self, organization_id: str) -> dict[str, Any]:
+        """Hard-delete an org (DELETE /audit/orgs/{id}).
+
+        Only allowed when nothing signed would be destroyed (never-ingested, or
+        archived with retention fully purged); otherwise the API responds 409
+        ``org_not_deletable`` (raised as :class:`invoance.ConflictError`).
+        Returns ``{"deleted": true, "id": "aorg_..."}``.
+        """
+        return await self._t.delete(f"/audit/orgs/{organization_id}")
 
     async def integrity(self, organization_id: str) -> dict[str, Any]:
         """Seq-gap integrity scan for an org (GET /audit/orgs/{id}/integrity)."""

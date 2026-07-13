@@ -26,7 +26,7 @@ Usage
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
+from typing import Any, Optional
 
 from invoance._internal.http import HttpTransport
 from invoance.config import ClientConfig
@@ -135,10 +135,12 @@ class InvoanceClient:
     async def validate(self) -> ValidationResult:
         """Probe a cheap authenticated endpoint to confirm the API key works.
 
-        Issues ``GET /v1/events?limit=1`` and classifies the outcome.
-        Does not raise — every failure mode (bad key, network down,
-        timeout, 5xx) is converted into a :class:`ValidationResult`
-        the caller can inspect.
+        Issues ``GET /v1/me`` and classifies the outcome. ``/v1/me``
+        requires no scope, so any valid key validates — including keys
+        limited to ``audit:*`` scopes (the old ``GET /v1/events`` probe
+        could 403 on those). Does not raise — every failure mode (bad
+        key, network down, timeout, 5xx) is converted into a
+        :class:`ValidationResult` the caller can inspect.
 
         ::
 
@@ -148,7 +150,7 @@ class InvoanceClient:
         """
         base_url = self._config.base_url
         try:
-            await self.events.list(limit=1)
+            await self._transport.get("/me")
             return ValidationResult(valid=True, reason=None, base_url=base_url)
         except AuthenticationError:
             return ValidationResult(
@@ -159,7 +161,7 @@ class InvoanceClient:
         except ForbiddenError:
             return ValidationResult(
                 valid=True,
-                reason="API key authenticated but lacks permission to list events",
+                reason="API key authenticated but requests from this address are blocked by its IP access rules",
                 base_url=base_url,
             )
         except QuotaExceededError:
@@ -180,6 +182,17 @@ class InvoanceClient:
                 reason=str(exc),
                 base_url=base_url,
             )
+
+    async def me(self) -> dict[str, Any]:
+        """Introspect the current API key via ``GET /v1/me``.
+
+        Returns the raw decoded JSON body — ``organization``, ``tenant``,
+        ``api_key`` (id, prefix, last4, scopes, ...), and ``limits``.
+        Requires no scope. Unlike :meth:`validate`, this raises the
+        normal SDK error hierarchy on failure
+        (:class:`invoance.AuthenticationError` on 401, etc.).
+        """
+        return await self._transport.get("/me")
 
     # ── Context manager ──────────────────────────────────────
 
